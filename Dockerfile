@@ -23,5 +23,5 @@ CMD [ "npm","run","start" ]
 # CMD [ "node", "./dist/app.js" ]
 
 # Run the following command to create a Docker image of this project:
-# docker build ./ -t elfensky/bukemes-back 
+# docker build ./ -t elfensky/bukemes-auth
 

@@ -82,7 +82,15 @@ const loginUser = async (req: Request, res: Response) => {
         };
 
         const token = createJWT(data);
-        res.status(200).json(token);
+        
+        res
+            // .header('Access-Control-Allow-Origin', '*')
+            // .header('Access-Control-Allow-Methods','GET,PUT,POST,DELETE,PATCH,OPTIONS')
+            // .header('Access-Control-Allow-Credentials','true')
+            .cookie('Authorization',`Bearer ${token}`)
+            .status(200)
+            // .send();
+            .json(token);
     } catch (err) {
         let message: string;
         if (err instanceof CustomError){
@@ -107,7 +115,11 @@ const pkce = async (req: Request, res: Response) => {
 
     try {
         const code_authorization: string = await PKCE.request(newPKCE);
-        res.status(200).json({code_authorization});
+        res
+            // .header('Access-Control-Allow-Origin', '*')
+            // .header('Access-Control-Allow-Methods','GET,PUT,POST,DELETE,PATCH,OPTIONS')
+            // .header('Access-Control-Allow-Credentials','true')
+            .status(200).json({code_authorization});
     } catch (err) {
         let message: string;
         if (err instanceof CustomError){
