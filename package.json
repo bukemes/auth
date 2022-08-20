@@ -18,8 +18,8 @@
     "build": "npx tsc",
     "start": "node dist/app.js",
     "dev": "npx nodemon --watch './src/**/*' --exec 'ts-node' ./src/app.ts",
-    "test": "npx jest --detectOpenHandles --coverage",
-    "test2": "npx jest --runInBand --detectOpenHandles"
+    "test": "npx jest --detectOpenHandles",
+    "coverage": "npx jest --runInBand --detectOpenHandles --coverage"
   },
   "dependencies": {
     "bcrypt": "^5.0.1",
