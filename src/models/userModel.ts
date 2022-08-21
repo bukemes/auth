@@ -2,7 +2,9 @@ import { Document, model, Model, Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 import {ICustomError, CustomError} from '../utilities/error';
 import validator from 'validator';
-import logger from '../utilities/logger';
+import { createJWT } from '../utilities/utils';
+
+// import logger from '../utilities/logger';
 
 export interface ILogin {
     email: string;
@@ -20,12 +22,11 @@ export interface IUserDocument extends IUser, Document {
     updatedAt: Date;
     createdAt: Date;
 }
-
 interface UserModel extends Model<IUserDocument> {
-  myStaticMethod(): number;
-  signup(input: IUser): Promise<IUserDocument>;
-  login(input: ILogin): Promise<IUserDocument>;
-  logout(_id: string): string;
+  signup(input: IUser): Promise<string>;
+  login(input: ILogin): Promise<string>;
+  logout(email: string): string;
+  refresh(session: string, token: object): Promise<string>;
 }
 
 const UserSchema = new Schema<IUserDocument, UserModel>({
@@ -56,14 +57,24 @@ const UserSchema = new Schema<IUserDocument, UserModel>({
 
 UserSchema.static('signup', async function signup(input: IUser) {
     // input validation
-    if(!input.email || !input.password || !input.tos || !input.role) {
+    if(!input.tos){
+        const error: ICustomError = {
+            code: 400,
+            type: 'Bad Request',
+            message: 'TOS is required',
+            fields: ['tos'],
+        }; throw new CustomError(error);
+    }
+
+    if(!input.email || !input.password || !input.role) {
         const error: ICustomError = {
             code: 400,
             type: 'Bad Request',
             message: 'All fields are required',
-            fields: ['email', 'password', 'tos', 'role'],
+            fields: ['email', 'password', 'role'],
         }; throw new CustomError(error);
     }
+
     if(!validator.isEmail(input.email)) {
         const error: ICustomError = {
             code: 400,
@@ -82,7 +93,7 @@ UserSchema.static('signup', async function signup(input: IUser) {
     // }
 
     // exists
-    const exists = await User.findOne({ email: input.email });
+    const exists = await USER.findOne({ email: input.email });
     if(exists){
         // https://stackoverflow.com/questions/3825990/http-response-code-for-post-when-resource-already-exists
         const error: ICustomError = {
@@ -99,12 +110,20 @@ UserSchema.static('signup', async function signup(input: IUser) {
 
     const newUser: IUser = {
         email: input.email,
-        password: hashedPassword,
+        password: hashedPassword, // store the HASHED password
         tos: input.tos,
         role: input.role,
     };
 
-    return await User.create(newUser);
+    const savedUser: IUserDocument = await USER.create(newUser);
+
+    const tokenData = {
+        email: savedUser.email,
+        role: savedUser.role,
+    };
+    const token = createJWT(tokenData);
+
+    return token;
 });
 
 UserSchema.static('login', async function login(input: ILogin) {
@@ -127,7 +146,7 @@ UserSchema.static('login', async function login(input: ILogin) {
     }
 
     // exists?
-    const user = await User.findOne({ email: input.email });
+    const user = await USER.findOne({ email: input.email });
     if(!user){
         const error: ICustomError = {
             code: 400,
@@ -149,8 +168,15 @@ UserSchema.static('login', async function login(input: ILogin) {
         }; throw new CustomError(error);
     }
 
-    return user;
+    const tokenData = {
+        email: user.email,
+        role: user.role,
+    };
+
+    const token = createJWT(tokenData);
+
+    return token;
 });
 
-const User = model<IUserDocument, UserModel>('User', UserSchema);
-export default User;
+const USER = model<IUserDocument, UserModel>('User', UserSchema);
+export default USER;

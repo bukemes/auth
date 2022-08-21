@@ -13,7 +13,7 @@ export default async function setupMongoose(): Promise<mongoose.Connection> {
         pass: process.env.MONGO_PASSWORD,
         host: process.env.MONGO_HOST,
         port: process.env.MONGO_PORT,
-        name: process.env.MONGO_DB, // database name
+        name: process.env.MONGO_DB || 'bukemes', // database name
         auth: process.env.MONGO_AUTH_SOURCE
     };
 

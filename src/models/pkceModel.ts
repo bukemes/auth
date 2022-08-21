@@ -32,6 +32,7 @@ export interface IPKCEDocument extends IStorePKCE, Document {
 interface PKCEModel extends Model<IPKCEDocument> {
     request(input: IRequestPKCE): Promise<string>;
     verify(input: IVerifyPKCE): Promise<boolean>;
+    clear(input: string): Promise<boolean>;
 }
 
 const PKCESchema = new Schema<IPKCEDocument, PKCEModel>({
@@ -120,6 +121,30 @@ PKCESchema.static('verify', async function verify(input: IVerifyPKCE) {
     }
 
     return isVerified;
+});
+
+PKCESchema.static('clear', async function clear(input: string) {
+    console.log('input', input);
+    if(!input){
+        const error: ICustomError = {
+            code: 500,
+            type: 'Internal Server Error',
+            message: 'Could not delete PKCE, no code_auth was provided',
+        }; throw new CustomError(error);
+    }
+
+    const decoded_input = decodeURIComponent(input);
+    
+    await PKCE.deleteMany({code_authorization: decoded_input}).
+        then(() => {
+            return true;
+        }).catch(() => {
+            const error: ICustomError = {
+                code: 404,
+                type: 'Not Found',
+                message: 'PKCE does not exist',
+            }; throw new CustomError(error);
+        });
 });
 
 const PKCE = model<IPKCEDocument, PKCEModel>('PKCE', PKCESchema);

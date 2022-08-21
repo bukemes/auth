@@ -5,6 +5,7 @@ import compression from 'compression';
 // security
 import helmet from 'helmet'; // import xss from 'xss'; -> helmet.xss(); takes care of that.
 import cors from 'cors'; // helmet contains cors? need to check. 
+import cookieParser from 'cookie-parser';
 // documentation
 import swaggerUI from 'swagger-ui-express';
 import openapiSpecification from './swagger';
@@ -24,11 +25,15 @@ export default function setupExpress(){
     // app.use(helmet()); // xss and other stuff
     // app.use(cors()); // cors
     app.use(cors({credentials: true, origin: 'http://localhost:9003'}));
-
+    
+    
     // json
     app.use(express.json()); // json, defaults to {strict:true}
     app.use(handleBodyParserErrors); // handle express.json's bodyparses errors in case of eg bad json
 
+    // cookies
+    app.use(cookieParser());
+    
     // API routes
     app.use('/auth', authRouter);
 

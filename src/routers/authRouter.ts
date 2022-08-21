@@ -1,30 +1,20 @@
 import express from 'express';
-import { pkce, loginUser, signupUser, logoutUser } from '../controllers/authController';
+import { pkce, login, signup, logout, refresh  } from '../controllers/authController';
+// import { requireAdmin } from '../middleware/requireAdmin';
+import { requireAuth } from '../middleware/requireAuth';
 
 const authRouter = express.Router();
 
-// pkce
+// no auth required
 authRouter.get('/pkce', pkce);
-// authRouter.get('/callback', () => {
-//     console.log('callback');
-// });
+authRouter.post('/signup', signup);
+authRouter.post('/login', login);
 
-// signup
-authRouter.post('/signup', signupUser);
-
-// login
-authRouter.post('/login', loginUser);
-
-// logout
-// this should invalidate the current code_challenges and other related tokens for that user.
-authRouter.post('/logout', logoutUser);
-
-// /login,  -> public route that accepts POST requests containing a username and password in the body. On success a JWT access token is returned with basic user details, and an HTTP Only cookie containing a refresh token.
-// /signup, -> public route that accepts POST requests containing a username and password in the body. On success a JWT access token is returned with basic user details, and an HTTP Only cookie containing a refresh token.
-// /refresh-token, 
-// /revoke-token, 
-// /users/{id}/refresh-tokens
-
-
+// only accessible with auth
+authRouter.use(requireAuth);
+authRouter.get('/logout', logout);
+authRouter.get('/refresh', refresh);
+// authRouter.use(requireAdmin);
+// authRouter.post('/setrole', setRole);
 
 export default authRouter;
