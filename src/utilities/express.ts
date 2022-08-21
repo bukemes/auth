@@ -23,7 +23,7 @@ export default function setupExpress(){
     // security
     // app.use(helmet()); // xss and other stuff
     // app.use(cors()); // cors
-    app.use(cors({credentials: true, origin: 'http://localhost:9002'}));
+    app.use(cors({credentials: true, origin: 'http://localhost:9003'}));
 
     // json
     app.use(express.json()); // json, defaults to {strict:true}

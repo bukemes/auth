@@ -1,7 +1,7 @@
 
 import { Request, Response } from 'express';
 import User, {ILogin, IUser, IUserDocument} from '../models/userModel';
-import CustomError from '../utilities/error';
+import {CustomError, ErrorResponse} from '../utilities/error';
 import logger from '../utilities/logger';
 import { createJWT, } from '../utilities/utils';
 // import { IJWT } from '../models/authModel';
@@ -50,10 +50,11 @@ const signupUser = async (req: Request, res: Response) => {
 
         res.status(200).json({jwt:token});
     } catch (err) {
-        let message: string;
+        // let message: string;
         if (err instanceof CustomError){
-            message = err.message;
-            res.status(400).json({ error: message });
+            ErrorResponse(err, res);
+            // message = err.message;
+            // res.status(400).json({ error: message });
         } else {
             logger.error(err);
             res.status(500).json({ error: 'Something went wrong' });
@@ -92,10 +93,8 @@ const loginUser = async (req: Request, res: Response) => {
             // .send();
             .json(token);
     } catch (err) {
-        let message: string;
         if (err instanceof CustomError){
-            message = err.message;
-            res.status(400).json({ error: message });
+            ErrorResponse(err, res);
         } else {
             logger.error(err);
             res.status(500).json({ error: 'Something went wrong' });
@@ -121,10 +120,8 @@ const pkce = async (req: Request, res: Response) => {
             // .header('Access-Control-Allow-Credentials','true')
             .status(200).json({code_authorization});
     } catch (err) {
-        let message: string;
         if (err instanceof CustomError){
-            message = err.message;
-            res.status(400).json({ error: message });
+            ErrorResponse(err, res);
         } else {
             logger.error(err);
             res.status(500).json({ error: 'Something went wrong' });

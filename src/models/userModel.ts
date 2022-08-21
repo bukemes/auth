@@ -1,6 +1,6 @@
 import { Document, model, Model, Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
-import CustomError from '../utilities/error';
+import {ICustomError, CustomError} from '../utilities/error';
 import validator from 'validator';
 import logger from '../utilities/logger';
 
@@ -55,27 +55,42 @@ const UserSchema = new Schema<IUserDocument, UserModel>({
 }, { timestamps: true });
 
 UserSchema.static('signup', async function signup(input: IUser) {
-
-    logger.warn('userModel.signup', input);
-
     // input validation
     if(!input.email || !input.password || !input.tos || !input.role) {
-        // const error = new CustomError('test');
-        // console.log(error instanceof Error);
-        // console.log(error instanceof CustomError);
-        throw new CustomError('All fields are required');
+        const error: ICustomError = {
+            code: 400,
+            type: 'Bad Request',
+            message: 'All fields are required',
+            fields: ['email', 'password', 'tos', 'role'],
+        }; throw new CustomError(error);
     }
     if(!validator.isEmail(input.email)) {
-        throw new CustomError('Invalid email');
+        const error: ICustomError = {
+            code: 400,
+            type: 'Bad Request',
+            message: 'Invalid email',
+            fields: ['email'],
+        }; throw new CustomError(error);
     }
     // if(!validator.isStrongPassword(input.password)) {
-    //     throw new CustomError('Password not strong enough');
+    //     const error: ICustomError = {
+    //         code: 400,
+    //         type: 'Bad Request',
+    //         message: 'Password not strong enough',
+    //         fields: ['password'],
+    //     }; throw new CustomError(error);
     // }
 
     // exists
     const exists = await User.findOne({ email: input.email });
     if(exists){
-        throw new CustomError('User already in use');
+        // https://stackoverflow.com/questions/3825990/http-response-code-for-post-when-resource-already-exists
+        const error: ICustomError = {
+            code: 409,
+            type: 'Conflict',
+            message: 'User already exists',
+            fields: ['email'],
+        }; throw new CustomError(error);
     } 
 
     // create user 
@@ -90,30 +105,48 @@ UserSchema.static('signup', async function signup(input: IUser) {
     };
 
     return await User.create(newUser);
-    // const createdUser = await User.create(newUser);
-    // return createdUser;
 });
 
 UserSchema.static('login', async function login(input: ILogin) {
     // input validation
     if(!input.email || !input.password) {
-        throw new CustomError('All fields are required');
+        const error: ICustomError = {
+            code: 400,
+            type: 'Bad Request',
+            message: 'All fields are required',
+            fields: ['email', 'password'],
+        };  throw new CustomError(error);
     }
     if(!validator.isEmail(input.email)) {
-        throw new CustomError('Invalid email');
+        const error: ICustomError = {
+            code: 400,
+            type: 'Bad Request',
+            message: 'Invalid email',
+            fields: ['email'],
+        }; throw new CustomError(error);
     }
 
     // exists?
     const user = await User.findOne({ email: input.email });
     if(!user){
-        throw new CustomError('User does not exist, please register');
+        const error: ICustomError = {
+            code: 400,
+            type: 'Bad Request',
+            message: 'User does not exist, please register',
+            fields: ['email'],
+        }; throw new CustomError(error);
     }
 
     // login user
     const isMatch = await bcrypt.compare(input.password, user.password);
 
     if(!isMatch){
-        throw new CustomError('Invalid password');
+        const error: ICustomError = {
+            code: 401,
+            type: 'Unauthorized',
+            message: 'Invalid password',
+            fields: ['password'],
+        }; throw new CustomError(error);
     }
 
     return user;
