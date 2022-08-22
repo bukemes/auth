@@ -6,9 +6,11 @@ import dotenv from 'dotenv';
 import logger from './utilities/logger';
 import setupExpress from './utilities/express';
 import setupMongoose from './utilities/database';
+import { checkEnvVariables } from './utilities/utils';
 
 // setup
 dotenv.config(); // get environment variables
+checkEnvVariables();
 app();
 // logger.info(process.env);
 

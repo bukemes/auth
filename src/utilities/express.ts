@@ -1,8 +1,9 @@
 // config & init
-import express, { Application, Request, Response } from 'express';
+import express, { Application } from 'express';
 // middleware
 import compression from 'compression';
 // security
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import helmet from 'helmet'; // import xss from 'xss'; -> helmet.xss(); takes care of that.
 import cors from 'cors'; // helmet contains cors? need to check. 
 import cookieParser from 'cookie-parser';
@@ -22,7 +23,7 @@ export default function setupExpress(){
     // MIDDLEWARE
     
     // security
-    // app.use(helmet()); // xss and other stuff
+    app.use(helmet()); // xss and other stuff
     // app.use(cors()); // cors
     app.use(cors({credentials: true, origin: 'http://localhost:9003'}));
     

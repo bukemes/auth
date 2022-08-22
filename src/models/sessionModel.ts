@@ -2,7 +2,7 @@ import { Document, model, Model, Schema } from 'mongoose';
 import { ICustomError, CustomError } from '../utilities/error';
 import { v4 as uuidv4 } from 'uuid';
 import { createJWT } from '../utilities/utils';
-
+import logger from '../utilities/logger';
 export interface ISession {
     email: string; // sent by client to initiate PKCE
     session: string; // sent by client to initiate PKCE
@@ -28,7 +28,6 @@ export interface SessionModel extends Model<ISessionDocument> {
 const SessionSchema = new Schema<ISessionDocument, SessionModel>({
     email: {
         type: String,
-        unique: true,
     },
     session: {
         type: String,
@@ -56,10 +55,11 @@ SessionSchema.static('create_session', async function create_session(email: stri
         const savedSession = await SESSION.create(newSession);
         return savedSession.session;
     } catch (err) {
+        logger.error(err);
         const error: ICustomError = {
             code: 500,
             type: 'Internal Server Error',
-            message: 'Could not store session',
+            message: 'Could not create session'
         }; throw new CustomError(error);
     }
 });

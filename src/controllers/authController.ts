@@ -161,9 +161,6 @@ const refresh = async (req: Request, res: Response) => {
     }
 };
 
-
-
-
 export {
     pkce,
     login,

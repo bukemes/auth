@@ -2,8 +2,8 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
-import logger from './logger';
-import fs from 'fs';
+// import logger from './logger';
+// import fs from 'fs';
 
 function isValidID(id: any) {
     if (mongoose.Types.ObjectId.isValid(id)) {
@@ -56,19 +56,34 @@ function createJWT (input: any) {
 }
 
 function checkEnvVariables () {
-    if (!process.env.SECRET_JWT) {
-        throw new Error('JWT_SECRET is not defined');
+    // console.log(process.env);
+    const availableEnvVariables = process.env;
+
+    const requiredEnvVariables = [
+        'NODE_ENV', 'PORT', 
+        'MONGO_USER', 'MONGO_PASSWORD', 'MONGO_HOST', 'MONGO_PORT', 'MONGO_DB', 'MONGO_AUTH_SOURCE',
+        'SECRET_JWT', 'SECRET_PKCE',
+    ];
+
+    let message = '';
+    requiredEnvVariables.forEach((envVariable) => {
+        if(envVariable in availableEnvVariables){
+            // console.log(`${envVariable} is available`);
+        } else {
+            message += '\n' + envVariable;
+        }
+    });
+
+    if (message.length > 0) {
+        console.log(`You are missing the following environment variable:${message}`);
+        process.exit(1);
     }
 }
-
-function generateRandomUUID () {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-}
-
 
 export {
     isValidID,
     isValidJSON,
     handleBodyParserErrors,
-    createJWT
+    createJWT,
+    checkEnvVariables
 };
