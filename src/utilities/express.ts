@@ -25,7 +25,22 @@ export default function setupExpress(){
     // security
     app.use(helmet()); // xss and other stuff
     // app.use(cors()); // cors
-    app.use(cors({credentials: true, origin: 'http://localhost:9003'}));
+    const whitelist = ['http://localhost', 'http://localhost:9003', 'https://tania.tours', ];
+    const corsOptions = {
+        credentials: true,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        origin: function (origin:any, callback:any) {
+            if (whitelist.indexOf(origin) !== -1) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        }
+    };
+
+    app.use(cors(corsOptions));
+      
+    // app.use(cors({credentials: true, origin: 'http://localhost:9003'}));
     
     
     // json
