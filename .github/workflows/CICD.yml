@@ -1,0 +1,76 @@
+name: CICD
+
+on:
+  push:
+    branches: [ "dev" ] # only do something if the branch "main" gets pushed to.
+  pull_request:
+    branches: [ "dev" ] # the branches below must be a subset of the branches above
+  
+jobs:
+  job-test_build: #run tests & build if they pass. 
+    runs-on: ubuntu-latest #select OS
+        
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3 # checksout current repository (a default Github Action)
+      
+      - name: Setup node.js | ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x' # ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci # clean install, similar to "npm i" but used in automated workflows
+      
+      - name: Run tests
+        run: npm run test # test the project
+
+      - name: Build if tests pass
+        run: npm run build
+
+      - name: Upload Build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: bukemes-auth-build
+          # path: ./dist # or path/to/artifact
+          path: |
+            ./dist
+            ./package.json
+            ./package-lock.json
+            ./Dockerfile
+            ./.dockerignore
+          if-no-files-found: error
+
+  job-dockerize: #create and publish docker image
+    needs: job-test_build
+    runs-on: ubuntu-latest #select OS
+        
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: bukemes-auth-build
+
+      - name: Display structure of downloaded files #really only used for debugging
+        run: ls -R
+
+      - name: Set up Docker Buildx
+        # id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # - name: Build Docker image
+      #   run: docker build ./ -t elfensky/bukemes-back    
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: ./
+          push: true
+          tags: elfensky/bukemes-auth:dev

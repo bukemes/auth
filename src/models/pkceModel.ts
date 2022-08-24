@@ -1,5 +1,5 @@
 import { Document, model, Model, Schema } from 'mongoose';
-import CustomError from '../utilities/error';
+import { ICustomError, CustomError } from '../utilities/error';
 import bcrypt from 'bcrypt';
 import {verifyChallenge} from 'pkce-challenge';
 
@@ -32,6 +32,7 @@ export interface IPKCEDocument extends IStorePKCE, Document {
 interface PKCEModel extends Model<IPKCEDocument> {
     request(input: IRequestPKCE): Promise<string>;
     verify(input: IVerifyPKCE): Promise<boolean>;
+    clear(input: string): Promise<boolean>;
 }
 
 const PKCESchema = new Schema<IPKCEDocument, PKCEModel>({
@@ -55,11 +56,19 @@ PKCESchema.static('request', async function request(input: IRequestPKCE) {
     } = input;
     
     if(!code_challenge || !code_challenge_method){
-        throw new CustomError('code_challenge and code_challenge_method are required');
+        const error: ICustomError = {
+            code: 400,
+            type: 'Bad Request',
+            message: 'code_challenge and code_challenge_method are required',
+        }; throw new CustomError(error);
     }
 
     if(code_challenge_method !== 'S256'){
-        throw new CustomError('PKCE needs to use SHA256');
+        const error: ICustomError = {
+            code: 400,
+            type: 'Bad Request',
+            message: 'PKCE needs to use SHA256',
+        };  throw new CustomError(error);
     }
 
     const presalt = code_challenge + code_challenge_method;
@@ -75,7 +84,11 @@ PKCESchema.static('request', async function request(input: IRequestPKCE) {
     const savedPKCE = await PKCE.create(newPKCE);
 
     if(!savedPKCE.code_authorization){
-        throw new CustomError('PKCE not saved');
+        const error: ICustomError = {
+            code: 500,
+            type: 'Internal Server Error',
+            message: 'code_challenge and code_challenge_method are required',
+        }; throw new CustomError(error);
     }
 
     return encodeURIComponent(savedPKCE.code_authorization);
@@ -90,16 +103,48 @@ PKCESchema.static('verify', async function verify(input: IVerifyPKCE) {
     const pkceDoc = await PKCE.findOne({code_authorization: code_encrypted});
     
     if(!pkceDoc){
-        throw new CustomError('PKCE not found');
+        const error: ICustomError = {
+            code: 400,
+            type: 'Bad Request',
+            message: 'Your PKCE challenge was not found',
+        }; throw new CustomError(error);
     }
 
     const isVerified = verifyChallenge(code_verifier, pkceDoc.code_challenge);
     
     if(!isVerified){
-        throw new CustomError('PKCE not verified');
+        const error: ICustomError = {
+            code: 401,
+            type: 'Unauthorized',
+            message: 'PKCE was not able to be verified',
+        }; throw new CustomError(error);
     }
 
     return isVerified;
+});
+
+PKCESchema.static('clear', async function clear(input: string) {
+    console.log('input', input);
+    if(!input){
+        const error: ICustomError = {
+            code: 500,
+            type: 'Internal Server Error',
+            message: 'Could not delete PKCE, no code_auth was provided',
+        }; throw new CustomError(error);
+    }
+
+    const decoded_input = decodeURIComponent(input);
+    
+    await PKCE.deleteMany({code_authorization: decoded_input}).
+        then(() => {
+            return true;
+        }).catch(() => {
+            const error: ICustomError = {
+                code: 404,
+                type: 'Not Found',
+                message: 'PKCE does not exist',
+            }; throw new CustomError(error);
+        });
 });
 
 const PKCE = model<IPKCEDocument, PKCEModel>('PKCE', PKCESchema);
